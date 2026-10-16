@@ -29,6 +29,30 @@ function authenticateRequest(): object
         ]);
     }
 
+    if (
+    !isset($decoded->jti) ||
+    !is_string($decoded->jti) ||
+    !preg_match('/^[a-f0-9]{32}$/', $decoded->jti)
+) {
+    jsonResponse(401, [
+        'success' => false,
+        'message' => 'Invalid authentication token.'
+    ]);
+}
+
+$blacklistStmt = $pdo->prepare(
+    'SELECT jti FROM token_blacklist WHERE jti = :jti LIMIT 1'
+);
+
+$blacklistStmt->execute(['jti' => $decoded->jti]);
+
+if ($blacklistStmt->fetch()) {
+    jsonResponse(401, [
+        'success' => false,
+        'message' => 'This token has been logged out.'
+    ]);
+}
+
     $config = require __DIR__ . '/../config/jwt.php';
 
     try {

@@ -41,3 +41,10 @@ CREATE TABLE IF NOT EXISTS tasks (
         REFERENCES users(id)
         ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS token_blacklist (
+    jti VARCHAR(64) PRIMARY KEY,
+    expires_at BIGINT UNSIGNED NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_token_blacklist_expiry (expires_at)
+);

@@ -69,12 +69,13 @@ try {
     $now = time();
 
     $payload = [
-        'iss' => $jwtConfig['issuer'],
-        'iat' => $now,
-        'exp' => $now + $jwtConfig['expiry'],
-        'sub' => (string) $user['id'],
-        'role' => $user['role']
-    ];
+    'iss' => $jwtConfig['issuer'],
+    'iat' => $now,
+    'exp' => $now + $jwtConfig['expiry'],
+    'sub' => (string) $user['id'],
+    'role' => $user['role'],
+    'jti' => bin2hex(random_bytes(16))
+];
 
     $token = JWT::encode(
         $payload,
