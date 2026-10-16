@@ -1,10 +1,12 @@
 
 <?php
 
+require_once __DIR__ . '/../helpers/response.php';
+
 $host = '127.0.0.1';
 $dbname = 'task_manager';
 $username = 'root';
-$password = ''; // Default Laragon setup; verify your MySQL credentials.
+$password = '12345678'; // Default Laragon setup; verify your MySQL credentials.
 
 try {
     $pdo = new PDO(
@@ -20,6 +22,8 @@ try {
 } catch (PDOException $e) {
     error_log($e->getMessage());
 
-    http_response_code(500);
-    exit('Database connection failed.');
+    jsonResponse(500, [
+        'success' => false,
+        'message' => 'Database connection failed.'
+    ]);
 }

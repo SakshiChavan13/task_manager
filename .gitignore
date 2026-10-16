@@ -1,1 +1,16 @@
+# Secrets
+.env
+.env.*
+!.env.example
 /backend/config/jwt.php
+
+# Dependencies
+/frontend/node_modules/
+/frontend/dist/
+/backend/vendor/
+/backend/.env
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
