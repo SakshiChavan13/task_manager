@@ -3,39 +3,36 @@
 
 header('Content-Type: application/json; charset=utf-8');
 
-require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../helpers/response.php';
+require_once __DIR__ . '/../../middleware/auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Allow: POST');
-
     jsonResponse(405, [
         'success' => false,
         'message' => 'Method not allowed.'
     ]);
 }
 
+$currentUser = authenticateRequest();
+
 $input = json_decode(file_get_contents('php://input'), true);
 
 if (!is_array($input)) {
     jsonResponse(400, [
         'success' => false,
-        'message' => 'Invalid JSON request body.'
+        'message' => 'Request body must be valid JSON.'
     ]);
 }
 
-$title = trim($input['title'] ?? '');
-$description = trim($input['description'] ?? '');
+$title = isset($input['title']) && is_string($input['title'])
+    ? trim($input['title'])
+    : '';
+
+$description = $input['description'] ?? null;
 $status = $input['status'] ?? 'todo';
 $priority = $input['priority'] ?? 'medium';
 $dueDate = $input['due_date'] ?? null;
-$userId = filter_var(
-    $input['user_id'] ?? null,
-    FILTER_VALIDATE_INT
-);
-
-$allowedStatuses = ['todo', 'in-progress', 'done'];
-$allowedPriorities = ['low', 'medium', 'high'];
 
 if ($title === '' || mb_strlen($title) > 255) {
     jsonResponse(422, [
@@ -44,103 +41,68 @@ if ($title === '' || mb_strlen($title) > 255) {
     ]);
 }
 
-if (!is_string($description)) {
+if ($description !== null && !is_string($description)) {
     jsonResponse(422, [
         'success' => false,
-        'message' => 'Description must be a string.'
+        'message' => 'Description must be a string or null.'
     ]);
 }
 
-if (!in_array($status, $allowedStatuses, true)) {
+if (!is_string($status) ||
+    !in_array($status, ['todo', 'in-progress', 'done'], true)) {
     jsonResponse(422, [
         'success' => false,
         'message' => 'Invalid task status.'
     ]);
 }
 
-if (!in_array($priority, $allowedPriorities, true)) {
+if (!is_string($priority) ||
+    !in_array($priority, ['low', 'medium', 'high'], true)) {
     jsonResponse(422, [
         'success' => false,
         'message' => 'Invalid task priority.'
     ]);
 }
 
-if ($userId === false || $userId === null || $userId < 1) {
-    jsonResponse(422, [
-        'success' => false,
-        'message' => 'A valid user_id is required.'
-    ]);
-}
-
 if ($dueDate !== null) {
     $date = is_string($dueDate)
-        ? DateTimeImmutable::createFromFormat('!Y-m-d', $dueDate)
+        ? DateTime::createFromFormat('!Y-m-d', $dueDate)
         : false;
 
-    if (
-        !$date ||
-        $date->format('Y-m-d') !== $dueDate
-    ) {
+    if (!$date || $date->format('Y-m-d') !== $dueDate) {
         jsonResponse(422, [
             'success' => false,
-            'message' => 'Due date must use YYYY-MM-DD format.'
+            'message' => 'Due date must use YYYY-MM-DD format or be null.'
         ]);
     }
 }
 
-try {
-    // Temporary: validate that the owner exists.
-    // Authentication will determine the authorized owner later.
-    $userStmt = $pdo->prepare(
-        'SELECT id FROM users WHERE id = :id'
-    );
-    $userStmt->execute(['id' => $userId]);
+$stmt = $pdo->prepare(
+    'INSERT INTO tasks (user_id, title, description, status, priority, due_date)
+     VALUES (:user_id, :title, :description, :status, :priority, :due_date)'
+);
 
-    if (!$userStmt->fetch()) {
-        jsonResponse(422, [
-            'success' => false,
-            'message' => 'The specified user does not exist.'
-        ]);
-    }
+$stmt->execute([
+    'user_id' => $currentUser->id,
+    'title' => $title,
+    'description' => $description,
+    'status' => $status,
+    'priority' => $priority,
+    'due_date' => $dueDate
+]);
 
-    $stmt = $pdo->prepare(
-        'INSERT INTO tasks
-            (user_id, title, description, status, priority, due_date)
-         VALUES
-            (:user_id, :title, :description, :status, :priority, :due_date)'
-    );
+$id = (int) $pdo->lastInsertId();
 
-    $stmt->execute([
-        'user_id' => $userId,
+jsonResponse(201, [
+    'success' => true,
+    'message' => 'Task created successfully.',
+    'data' => [
+        'id' => $id,
+        'user_id' => $currentUser->id,
         'title' => $title,
-        'description' => $description !== '' ? $description : null,
+        'description' => $description,
         'status' => $status,
         'priority' => $priority,
         'due_date' => $dueDate
-    ]);
-
-    $taskId = (int) $pdo->lastInsertId();
-
-    $stmt = $pdo->prepare(
-        'SELECT id, user_id, title, description, status,
-                priority, due_date, created_at, updated_at
-         FROM tasks
-         WHERE id = :id'
-    );
-
-    $stmt->execute(['id' => $taskId]);
-
-    jsonResponse(201, [
-        'success' => true,
-        'message' => 'Task created successfully.',
-        'data' => $stmt->fetch()
-    ]);
-
-} catch (PDOException $e) {
-    error_log($e->getMessage());
-
-    jsonResponse(500, [
-        'success' => false,
-        'message' => 'Failed to create task.'
-    ]);
-}
+    ]
+]);
