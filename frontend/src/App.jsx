@@ -134,6 +134,41 @@ export default function App() {
       setLoadingAuth(false);
     }
   }
+  const [aiLoading, setAiLoading] = useState(false);
+const [aiMessage, setAiMessage] = useState('');
+
+async function handleSuggestPriority() {
+  if (!form.title.trim()) {
+    setAiMessage('Enter a task title first.');
+    return;
+  }
+
+  setAiLoading(true);
+  setAiMessage('');
+
+  try {
+    const result = await apiRequest('tasks/suggest-priority.php', {
+      method: 'POST',
+      body: JSON.stringify({
+        title: form.title,
+        description: form.description,
+      }),
+    });
+
+    setForm((previous) => ({
+      ...previous,
+      priority: result.suggested_priority,
+    }));
+
+    setAiMessage(
+      `AI suggests ${result.suggested_priority} priority. You can change it before saving.`
+    );
+  } catch (error) {
+    setAiMessage(error.message || 'Unable to suggest priority.');
+  } finally {
+    setAiLoading(false);
+  }
+}
 
   function startCreate() {
     setEditingId(null);
@@ -379,6 +414,15 @@ export default function App() {
                   <option value="high">High</option>
                 </select>
               </label>
+              <button
+  type="button"
+  onClick={handleSuggestPriority}
+  disabled={aiLoading}
+>
+  {aiLoading ? 'Suggesting...' : '✨ Suggest Priority with AI'}
+</button>
+
+{aiMessage && <p>{aiMessage}</p>}
             </div>
 
             <label>
