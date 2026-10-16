@@ -43,6 +43,8 @@ function authenticateRequest(): object
             new Key($config['secret'], 'HS256')
         );
     } catch (\Throwable $e) {
+        error_log('JWT verification failed: ' . $e->getMessage());
+
         jsonResponse(401, [
             'success' => false,
             'message' => 'Invalid or expired authentication token.'

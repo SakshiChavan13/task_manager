@@ -31,6 +31,13 @@ CREATE TABLE users (
         ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS token_blacklist (
+    jti VARCHAR(64) PRIMARY KEY,
+    expires_at BIGINT UNSIGNED NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_token_blacklist_expiry (expires_at)
+) ENGINE=InnoDB;
+
 CREATE TABLE tasks (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT UNSIGNED NOT NULL,

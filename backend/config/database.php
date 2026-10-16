@@ -6,7 +6,7 @@ require_once __DIR__ . '/../helpers/response.php';
 $host = '127.0.0.1';
 $dbname = 'task_manager';
 $username = 'root';
-$password = '12345678'; // Default Laragon setup; verify your MySQL credentials.
+$password = ''; // Default Laragon setup; verify your MySQL credentials.
 
 try {
     $pdo = new PDO(
