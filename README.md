@@ -199,20 +199,4 @@ The database design document covers the schema, relationships, indexing strategy
 | Task 3 | Database Design & Query Optimization | Documentation linked above |
 | Task 6 | AI Priority Suggestions | Implemented; requires Gemini configuration |
 
-*Ensure the statuses above accurately reflect the final implementation and testing.*
 
-## 🔮 Future Improvements
-
-- Refresh-token rotation and management.
-- Password-reset functionality.
-- Audit logging for administrative actions.
-- Automated API and authorization tests.
-- Docker Compose for simplified setup.
-- Further query optimization based on execution plans and larger datasets.
-
-## 👩‍💻 Author
-
-**[Your Name]**
-
-- GitHub Profile: [Your GitHub Profile](<YOUR_GITHUB_PROFILE_URL>)
-- Project Repository: [Task Manager](<YOUR_GITHUB_REPOSITORY_URL>)
